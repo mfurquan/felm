@@ -1,6 +1,6 @@
 module integration
 !==========================================================================
-! Cubature rules types and integration function
+! Cubature rules type and integration function
 !--------------------------------------------------------------------------
 ! M. Furquan | Apr 2016
 !==========================================================================
@@ -9,7 +9,8 @@ module integration
    implicit none
 
    type :: cubrule
-      real(kind=wp),allocatable,private :: cpts(:,:), cwts(:)
+      real(kind=wp),allocatable,private :: cpts(:), cwts(:)
+      integer :: ndim
       contains
          procedure :: set_crule
 
@@ -29,93 +30,95 @@ module integration
 
    contains
 
-      subroutine set_crule(this,coor,wts)
+      subroutine set_crule(this, coor, wts, dimn)
          implicit none
          class(cubrule),intent(inout) :: this
-         real(kind=wp),intent(in) :: coor(:,:),wts(:)
+         real(kind=wp),intent(in) :: coor(:), wts(:)
+         integer,intent(in) :: dimn
+         integer :: npts
 
-         if(size(coor,2)/=size(wts)) &
-            error stop "ERROR in set_crule: incompatible input data"
+         if(size(coor) /= size(wts)*dimn) &
+            error stop "in set_crule: incompatible input data"
+
+         this%ndim = dimn
+         npts = size(wts)
 
          if(.NOT.allocated(this%cpts)) &
-            allocate(this%cpts,mold=coor)
+            allocate(this%cpts(dimn*npts))
 
-         if(size(this%cpts,2)/=size(coor,2)) then
+         if(size(this%cpts) /= npts*dimn) then
             deallocate(this%cpts)
-            allocate(this%cpts,mold=coor)
+            allocate(this%cpts(dimn*npts))
          end if
 
-         this%cpts=coor
+         this%cpts = coor
 
          if(.NOT.allocated(this%cwts)) &
-            allocate(this%cwts,mold=wts)
+            allocate(this%cwts(npts))
 
-         if(size(this%cwts)/=size(wts)) then
+         if(size(this%cwts) /= npts) then
             deallocate(this%cwts)
-            allocate(this%cwts,mold=wts)
+            allocate(this%cwts(npts))
          end if
 
-         this%cwts=wts
+         this%cwts = wts
       end subroutine set_crule
 
-      elemental function get_cpts(this,ind)
+      pure function get_cpts(this,ind)
          implicit none
          class(cubrule),intent(in) :: this
          integer,intent(in) :: ind
-         real(kind=wp),intent(out) :: get_cpts(:)
+         real(kind=wp) :: get_cpts(this%ndim)
 
-         get_cpts=this%cpts(:,ind)
+         get_cpts=this%cpts((ind-1)*this%ndim+1: &
+                                ind*this%ndim)
       end function get_cpts
 
-      elemental function get_cwts(this,ind)
+      pure function get_cwts(this,ind)
          implicit none
          class(cubrule),intent(in) :: this
          integer,intent(in) :: ind
-         real(kind=wp),intent(out) :: get_cwts
+         real(kind=wp) :: get_cwts
 
          get_cwts=this%cwts(ind)
       end function get_cwts
 
-      elemental function get_ncub(this)
+      pure function get_ncub(this)
          implicit none
          class(cubrule),intent(in) :: this
-         integer,intent(out) :: get_ncub
+         integer :: get_ncub
 
-         get_ncub=size(this%cwts)
+         get_ncub = size(this%cwts)
       end function get_ncub
 
-      elemental function get_ndim(this)
+      pure function get_ndim(this)
          implicit none
          class(cubrule),intent(in) :: this
-         integer,intent(out) :: get_ndim
+         integer :: get_ndim
 
-         get_ndim=size(1,cpts)
+         get_ndim = this%ndim
       end function get_ndim
 
-      pure function tensorprod_cubrule(ruleA,ruleB) result (ruleC)
+      function tensorprod_cubrule(ruleA,ruleB) result (ruleC)
       !==========================================================
       ! Implements tensor product of two cubature rules
       !==========================================================
          implicit none
-         class(cubrule),intent(in) :: ruleA,ruleB
-         class(cubrule),intent(out) :: ruleC
-         real(kind=wp),allocatable :: tcor(:,:),twts(:)
-         integer :: i,j,k
-         integer :: ncubA,ncubB,ncubC
-         integer :: ndimA,ndimB,ndimC
-         integer,allocatable :: ind(:)
+         type(cubrule),intent(in) :: ruleA, ruleB
+         type(cubrule) :: ruleC
+         real(kind=wp),allocatable :: tcor(:,:), twts(:)
+         integer :: i, j, k
+         integer :: ncubA, ncubB, ncubC
+         integer :: ndimA, ndimB, ndimC
 
-         ncubA=ruleA%get_ncub()
-         ncubB=ruleB%get_ncub()
+         ncubA = ruleA%get_ncub()
+         ncubB = ruleB%get_ncub()
 
-         ndimA=ruleA%get_ndim()
-         ndimB=ruleB%get_ndim()
+         ndimA = ruleA%get_ndim()
+         ndimB = ruleB%get_ndim()
 
-         ncubC=ncubA*ncubB
-         ndimC=ndimA+ndimB
-
-         allocate(ind(max(ncubC,ndimC)))
-         ind=[(i,i=1,size(ind))]
+         ncubC = ncubA * ncubB
+         ndimC = ndimA + ndimB
 
          allocate(tcor(ndimC,ncubC))
          allocate(twts(ncubC))
@@ -123,79 +126,82 @@ module integration
          k=0
          do i=1,ncubA
             do j=1,ncubB
-               k=k+1
-               tcor(1:ndimA,k)      =ruleA%get_cpts(i)
-               tcor(ndimA+1:ndimB,k)=ruleB%get_cpts(j)
-               twts(k)=ruleA%get_cwts(i)*ruleB%get_cwts(j)
+               k = k + 1
+               tcor(1:ndimA,k) = ruleA%get_cpts(i)
+               tcor(ndimA+1:ndimB,k) = ruleB%get_cpts(j)
+               twts(k) = ruleA%get_cwts(i) * ruleB%get_cwts(j)
             end do
          end do
 
-         call ruleC%set_crule(tcor,twts)
+         call ruleC%set_crule(reshape(tcor,[size(tcor)]),twts,ndimC)
       end function tensorprod_cubrule
 
-      pure function exc_sim(nord,sdim)
+      function exc_sim(nord,sdim)
       !================================================================
       ! Exact cubature rule for integrating cubic polynomial
       ! over a sdim-th dimensional simplex.
       ! Ref: Hammer & Stroud "Numerical integration over simplexes"
       !================================================================
          implicit none
-         integer,intent(in) :: nord,sdim
-         class(cubrule),intent(out) :: exc_sim
-         real(kind=wp),allocatable :: excor(:,:),exwt(:)
+         integer,intent(in) :: nord, sdim
+         type(cubrule) :: exc_sim
+         real(kind=wp),allocatable :: excor(:,:), exwt(:)
          real(kind=wp),allocatable :: vertex(:,:)
          real(kind=wp) :: vol
+         integer :: i, j
 
-         allocate(vertex(sdim,sdim+1))
-         allocate(excor(sdim,sdim+2))
-         allocate(exwt(sdim+2))
+         allocate(vertex(sdim,sdim + 1))
+         allocate(excor(sdim,sdim + 2))
+         allocate(exwt(sdim + 2))
 
-         vertex=0.
-         vol=1.
-         do i=2,sdim+1
+         vertex = 0.
+         vol = 1.
+         do concurrent (i = 2:sdim+1)
             vertex(i-1,i)=1.
             vol=vol/(i-1)
          end do
 
-         excor(:,sdim+2)=sum(vertex)/(sdim+1)
-         exwt(sdim+2)=-(sdim+1)**2*vol/(4*(sdim+2))
+         excor(:,sdim+2) = sum(vertex,2)/(sdim+1)
+         exwt(sdim+2) = -(sdim+1)**2*vol/(4*(sdim+2))
 
-         excor(:,1:sdim+1)=(2./(sdim+3))*vertex &
-                          +((sdim+1)/(sdim+3))*excor(:,sdim+2)
-
-         do concurrent (i=1:sdim+1)
-            exwt(i)=(i+2)**2*vol/(4*i*(i+1))
+         do concurrent (i = 1:sdim, j = 1:sdim+1)
+            excor(i,j) = ((sdim+1.)/(sdim+3.)) * excor(i,sdim+2)
          end do
+         excor(:,1:sdim+1) = excor(:,1:sdim+1) + (2./(sdim+3)) * vertex
+         exwt(1:sdim+1)    = (sdim+3)**2*vol/(4*(sdim+1)*(sdim+2))
 
-         call exc_sim%set_crule(excor,exwt)
+         call exc_sim%set_crule(reshape(excor,[size(excor)]),exwt,sdim)
       end function exc_sim
 
-      pure function gaus_lin(npts)
+      function gaus_lin(npts)
         implicit none
         integer,intent(in) :: npts
         integer :: loc
-        class(cubrule),intent(out) :: gaus_lin
+        type(cubrule) :: gaus_lin
 
-        loc=npts*(npts-1)/2
-        call gaus_lin%set_crule(gaus_pts(loc:loc+npts),gaus_wts(loc:loc+npts))
+        loc = npts * (npts-1)/2
+        call gaus_lin%set_crule(gaus_pts(loc+1:loc+npts), &
+                                gaus_wts(loc+1:loc+npts),1)
       end function gaus_lin
 
       pure function integrate(integrand,crule)
          implicit none
-         real(kind=wp),intent(out) :: integrate
-         class(cubrule),intent(in) :: crule
-         integer,allocatable :: ind(:)
-         integer :: i
+         real(kind=wp) :: integrate
+         type(cubrule),intent(in) :: crule
+         integer :: i, ncub
          interface
-            elemental function integrand(xi)
+            pure function integrand(xi)
+               use global
                real(kind=wp),intent(in) :: xi(:)
-               real(kind=wp),intent(out) :: integrand
+               real(kind=wp) :: integrand
             end function integrand
          end interface
 
-         allocate(ind(crule%get_ncub()))
-         ind=[(i,i=1,size(ind))]
-
-         integrate=sum(crule%get_cwts(ind)*integrand(crule%get_cpts(ind)))
+         ncub = crule%get_ncub()
+         integrate = 0.
+         do concurrent (i = 1:ncub)
+            integrate = integrate &
+                      + crule%get_cwts(i)*integrand(crule%get_cpts(i))
+         end do
       end function integrate
 end module integration

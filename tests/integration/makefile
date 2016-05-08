@@ -5,7 +5,7 @@ MODDIR = ../../include
 OBJDIR = ../../build
 
 FC = gfortran
-FFLAGS = -g -fbounds-check -J$(MODDIR)
+FFLAGS = -g -fbounds-check# -I$(MODDIR)
 
 LD = $(FC)
 LFLAGS = 
