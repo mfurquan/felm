@@ -16,23 +16,24 @@ program test_integration
    integral = integrate(func2,trule)
    write(*,*) 'integral over triangle =',integral
 
-   ! testing 4 point square rule
+   ! testing 9 point square rule
    sqrule  = lrule.otimes.lrule
-   integral = integrate(func1,sqrule)
+   integral = integrate(func2,sqrule)
    write(*,*) 'integral over square =',integral
 
    ! testing cubic tetrahedral rule
    tetrule = cubrule(3,3)
-   integral = integrate(func1,tetrule)
+   integral = integrate(func3,tetrule)
    write(*,*) 'integral over tetrahedron =',integral
 
    ! testing cubic wedge rule
    wdgrule = trule.otimes.lrule
-   integral = integrate(func1,wdgrule)
+   integral = integrate(func3,wdgrule)
    write(*,*) 'integral over wedge =',integral
 
    ! testing 8 point hexahedral rule
    hexrule = sqrule.otimes.lrule
+   integral = integrate(func3,hexrule)
    write(*,*) 'integral over hexahedron =',integral
 
    contains
@@ -50,6 +51,14 @@ program test_integration
          real(kind=wp),intent(in) :: x(:)
          real(kind=wp) :: func2
 
-         func2=x(1)**2*x(2)
+         func2=x(1)**2+x(2)**2
       end function func2
+
+      pure function func3(x)
+         implicit none
+         real(kind=wp),intent(in) :: x(:)
+         real(kind=wp) :: func3
+
+         func3=product(x)
+      end function func3
 end program test_integration
