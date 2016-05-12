@@ -122,13 +122,12 @@ module integration
 
          allocate(tcor(ndimC,ncubC))
          allocate(twts(ncubC))
-
          k=0
          do i=1,ncubA
             do j=1,ncubB
                k = k + 1
-               tcor(1:ndimA,k) = ruleA%get_cpts(i)
-               tcor(ndimA+1:ndimB,k) = ruleB%get_cpts(j)
+               tcor(      1:ndimA,k) = ruleA%get_cpts(i)
+               tcor(ndimA+1:ndimC,k) = ruleB%get_cpts(j)
                twts(k) = ruleA%get_cwts(i) * ruleB%get_cwts(j)
             end do
          end do
