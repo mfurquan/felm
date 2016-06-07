@@ -10,7 +10,7 @@ module integration
 
    type :: cubrule
       real(kind=wp),allocatable,private :: cpts(:), cwts(:)
-      integer :: ndim
+      integer :: ndim, npts
       contains
          procedure :: set_crule
 
@@ -35,30 +35,29 @@ module integration
          class(cubrule),intent(inout) :: this
          real(kind=wp),intent(in) :: coor(:), wts(:)
          integer,intent(in) :: dimn
-         integer :: npts
 
          if(size(coor) /= size(wts)*dimn) &
             error stop "in set_crule: incompatible input data"
 
          this%ndim = dimn
-         npts = size(wts)
+         this%npts = size(wts)
 
          if(.NOT.allocated(this%cpts)) &
-            allocate(this%cpts(dimn*npts))
+            allocate(this%cpts(dimn*this%npts))
 
-         if(size(this%cpts) /= npts*dimn) then
+         if(size(this%cpts) /= this%npts*dimn) then
             deallocate(this%cpts)
-            allocate(this%cpts(dimn*npts))
+            allocate(this%cpts(dimn*this%npts))
          end if
 
          this%cpts = coor
 
          if(.NOT.allocated(this%cwts)) &
-            allocate(this%cwts(npts))
+            allocate(this%cwts(this%npts))
 
-         if(size(this%cwts) /= npts) then
+         if(size(this%cwts) /= this%npts) then
             deallocate(this%cwts)
-            allocate(this%cwts(npts))
+            allocate(this%cwts(this%npts))
          end if
 
          this%cwts = wts
@@ -88,7 +87,7 @@ module integration
          class(cubrule),intent(in) :: this
          integer :: get_ncub
 
-         get_ncub = size(this%cwts)
+         get_ncub = this%npts
       end function get_ncub
 
       pure function get_ndim(this)
