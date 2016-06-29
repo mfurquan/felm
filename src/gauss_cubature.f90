@@ -11,7 +11,7 @@ module gauss_cubature
       -1.0/sqrt(3.0),                                      &
        1.0/sqrt(3.0),                                      &
 !
-       !3 pointy rule 
+       ! 3 pointy rule 
       -sqrt(3.0/5.0),                                      &
        0.0,                                                &
        sqrt(3.0/5.0) ],                                    &
