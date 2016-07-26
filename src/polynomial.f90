@@ -17,7 +17,9 @@ module polynomial_type
       contains
          procedure,private :: set_poly
          procedure,private :: set_const
+         procedure,private :: assign_poly
          generic :: set_polynomial => set_poly,  set_const
+         generic :: assignment(=) => assign_poly
          procedure :: clean
          procedure :: eval
          procedure :: deriv
@@ -75,6 +77,18 @@ module polynomial_type
          if(allocated(this%var)) deallocate(this%var)
       end subroutine set_const
 
+      subroutine assign_poly(lvalue, rvalue)
+         class(polynomial),intent(in) :: rvalue
+         class(polynomial),intent(out) :: lvalue
+
+         if(rvalue%nterms>0) then
+            call lvalue%set_polynomial(rvalue%coeff,rvalue%monomial, &
+               rvalue%var,rvalue%const)
+         else
+            call lvalue%set_polynomial(rvalue%const)
+         end if
+      end subroutine assign_poly
+
       pure function eval(this,x)
          class(polynomial),intent(in) :: this
          real(kind=wp),intent(in) :: x(:)
@@ -93,29 +107,31 @@ module polynomial_type
          end do
       end function eval
 
-      pure function deriv(this,tvar)
+      function deriv(this,tvar)
          class(polynomial),intent(in) :: this
          type(polynomial) :: deriv
          character(len=*),intent(in) :: tvar
          integer :: ivar
 
          if(this%nvar == 0) then
-            this%set_polynomial(0.0)
+            call deriv%set_polynomial(0.0_wp)
          else if(ANY(tvar /= this%var(:))) then
-            this%set_polynomial(0.0)
+            call deriv%set_polynomial(0.0_wp)
          else
             do ivar = 1,this%nvar
                if(tvar == this%var(ivar)) exit
             end do
-            this%coeff = this%coeff * this%monomial(ivar,:)
-            this%monomial(ivar,:) = this%monomial(ivar,:) - 1
+            deriv = this
+            deriv%const = 0.0_wp
+            deriv%coeff = this%coeff * this%monomial(ivar,:)
+            deriv%monomial(ivar,:) = this%monomial(ivar,:) - 1
          end if
       end function deriv
 
       ! removes extra allocation, 
       ! stores polynomial in its simplest form
       subroutine clean(this)
-         class(polynomial),intent(in) :: this
+         class(polynomial),intent(inout) :: this
          real(kind=wp),allocatable :: ccoeff(:)
          real(kind=wp) :: cconst
          integer,allocatable :: cmono(:,:), drow(:), dcol(:)
@@ -168,16 +184,19 @@ module polynomial_type
 
       subroutine prnt(this)
          class(polynomial) :: this
-         integer :: itrm, i, j
+         integer :: itrm, ivar
+         character(len=4) :: afmt
 
          do itrm = 1, this%nterms
-            if(this%coeff(i) > 0. .AND. itrm > 1) &
-               write(*,'(a)',advance='no') '+'
-            write(*,'(f8.5)',advance='no') this%coeff(i)
-            do j = 1, this%nvar
-               write(*,'(5a)',advance='no') this%var(j)
-               if(this%monomial(j,i)/=1) then
-                  write(*,'(ai2)',advance='no') '^',this%monomial(j,i)
+            if(this%coeff(itrm) > 0. .AND. itrm > 1) &
+               write(*,'(a2)',advance='no') ' +'
+            write(*,'(f0.5a)',advance='no') this%coeff(itrm),' '
+            do ivar = 1, this%nvar
+               write(afmt,'(a2i0a)') '(a', len_trim(this%var(ivar)), ')'
+               if(this%monomial(ivar,itrm)/=0) then
+                  write(*,afmt,advance='no') this%var(ivar)
+                  if(this%monomial(ivar,itrm)/=1) &
+                     write(*,'(ai0)',advance='no') '^',this%monomial(ivar,itrm)
                end if
             end do
          end do
