@@ -137,7 +137,7 @@ module polynomial_type
          integer,allocatable :: cmono(:,:), drow(:), dcol(:)
          character(len=var_len),allocatable :: cvar(:)
          logical :: extra_var(this%nvar), extra_trm(this%nterms)
-         integer :: i, j, ivar
+         integer :: i, j, ivar, imono
 
          ccoeff = this%coeff
          cmono = this%monomial
@@ -146,10 +146,8 @@ module polynomial_type
          ! checking for superfluous variables
          extra_var = .FALSE.
          do concurrent (ivar = 1 : this%nvar)
-            if(ALL(this%monomial(ivar,:) == 0)) then
-               cconst = cconst + this%coeff(ivar)
+            if(ALL(this%monomial(ivar,:) == 0)) &
                extra_var(ivar) = .TRUE.
-            end if
          end do
 
          ! checking for superfluous monomials
@@ -158,18 +156,29 @@ module polynomial_type
             extra_trm = .TRUE.
          end where
 
+         do concurrent (imono = 1 : this%nterms)
+            if(ALL(this%monomial(:,imono)==0)) then
+               cconst = cconst + this%coeff(imono)
+               extra_trm(imono) = .TRUE.
+            end if
+         end do
+
          ! deleting extra rows/columns
          allocate(drow(count(extra_var)))
          allocate(dcol(count(extra_trm)))
          j = 0
          do i = 1,size(extra_trm)
-            j = j + 1
-            if(extra_trm(i)) dcol(j) = i
+            if(extra_trm(i)) then
+               j = j + 1
+               dcol(j) = i
+            end if
          end do
          j = 0
          do i = 1,size(extra_var)
-            j = j + 1
-            if(extra_var(i)) drow(j) = i
+            if(extra_var(i)) then
+               j = j + 1
+               drow(j) = i
+            end if
          end do
 
          call del_elem(ccoeff,dcol)
@@ -200,6 +209,10 @@ module polynomial_type
                end if
             end do
          end do
+         if(this%const/=0) then
+            if(this%const>0) write(*,'(af0.5)',advance='no') '+',this%const
+            if(this%const<0) write(*,'(f0.5)',advance='no') this%const
+         end if
          write(*,*)
       end subroutine prnt
 end module polynomial_type
