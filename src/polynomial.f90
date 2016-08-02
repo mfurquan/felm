@@ -101,9 +101,9 @@ module polynomial_type
          do concurrent (i = 1:this%nterms)
             tmp = 1
             do concurrent (j = 1:this%nvar)
-               tmp = x(j)**this%monomial(j,i)
+               tmp = tmp * x(j)**this%monomial(j,i)
             end do
-            eval = eval + tmp
+            eval = eval + tmp * this%coeff(i)
          end do
       end function eval
 
@@ -115,7 +115,7 @@ module polynomial_type
 
          if(this%nvar == 0) then
             call deriv%set_polynomial(0.0_wp)
-         else if(ANY(tvar /= this%var(:))) then
+         else if(ALL(tvar /= this%var(:))) then
             call deriv%set_polynomial(0.0_wp)
          else
             do ivar = 1,this%nvar
@@ -126,6 +126,7 @@ module polynomial_type
             deriv%coeff = this%coeff * this%monomial(ivar,:)
             deriv%monomial(ivar,:) = this%monomial(ivar,:) - 1
          end if
+         call deriv%clean
       end function deriv
 
       ! removes extra allocation, 
