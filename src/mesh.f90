@@ -9,32 +9,28 @@ module mesh
    implicit none
 
    type :: node
-      real(kind=wp),private :: x(nsd)
-      real(kind=wp),private :: u(ndf)
+      real(kind=wp),allocatable,private :: x(nsd)
       integer,private :: id
       contains
          procedure :: set_x
-         procedure :: set_u
          procedure :: set_id
 
          procedure :: get_x
-         procedure :: get_u
          procedure :: get_id
-!         procedure :: get_ndf
    end type node
 
-   type :: element
+   type :: cell
       integer,allocatable,private :: ien(:)
-      character(len=elty_len),private :: elty
+      character(len=celltype_len),private :: celltype
       contains
          procedure :: nen
-         procedure :: set_element
+         procedure :: set_cell
 
-         procedure :: get_elty
+         procedure :: get_celltype
          procedure :: get_ien
-   end type element
+   end type cell
 
-   type,extends(element) :: bface
+   type,extends(cell) :: bface
       real(kind=wp) :: bval(ndf)
       logical :: isDirich=.FALSE.
       contains
@@ -48,7 +44,7 @@ module mesh
    type :: zone
       integer :: nn,ne,bnf
       type(node),allocatable :: nod(:)
-      type(element),allocatable :: elem(:)
+      type(cell),allocatable :: cells(:)
       type(bface),allocatable :: bndry(:)
       contains
          procedure :: read_zone
@@ -108,47 +104,35 @@ module mesh
          get_id=this%id
       end function get_id
 
-!      pure function get_ndf(this)
-!         implicit none
-!         class(node),intent(in) :: this
-!         integer :: get_ndf
-!
-!         if(allocated(this%u)) then
-!            get_ndf=size(this%u)
-!         else
-!            get_ndf=0
-!         end if
-!      end function get_ndf
-
-!**************** element-bound procedures ***********************
+!**************** cell-bound procedures ***********************
      pure function nen(this)
          implicit none
-         class(element),intent(in) :: this
+         class(cell),intent(in) :: this
          integer :: nen
-         read(this%elty(elty_len-1:elty_len),'(I2)') nen
+         read(this%celltype(celltype_len-1:celltype_len),'(I2)') nen
       end function nen
 
-      subroutine set_element(this,typname,conn)
+      subroutine set_cell(this,typname,conn)
          implicit none
-         class(element),intent(inout) :: this
-         character(len=elty_len),intent(in) :: typname
+         class(cell),intent(inout) :: this
+         character(len=celltype_len),intent(in) :: typname
          integer :: conn(:)
 
-         this%elty = typname
+         this%celltype = typname
          this%ien = conn
-      end subroutine set_element
+      end subroutine set_cell
 
-      pure function get_elty(this)
+      pure function get_celltype(this)
          implicit none
-         class(element),intent(in) :: this
-         character(len=elty_len) :: get_elty
+         class(cell),intent(in) :: this
+         character(len=celltype_len) :: get_celltype
 
-         get_elty=this%elty
-      end function get_elty
+         get_celltype=this%celltype
+      end function get_celltype
 
       elemental function get_ien(this,inod)
          implicit none
-         class(element),intent(in) :: this
+         class(cell),intent(in) :: this
          integer,intent(in) :: inod
          integer :: get_ien
 
@@ -193,11 +177,11 @@ module mesh
 
          real(kind=wp) :: r(nsd),val(ndf)
          integer :: i,j,k,n,ienblock(nen_max)
-         character(len=elty_len) :: tname
+         character(len=celltype_len) :: tname
          character(len=4) :: fmstr
          logical :: btype
 
-         write(fmstr,'(A2,I1,A)') '(A',elty_len,')'
+         write(fmstr,'(A2,I1,A)') '(A',celltype_len,')'
 
          open(10,file=trim(nodfile))
          open(20,file=trim(ienfile))
@@ -207,7 +191,7 @@ module mesh
          newzone%nn=Znn
          newzone%ne=Zne
          allocate(newzone%nod(Znn))
-         allocate(newzone%elem(Zne))
+         allocate(newzone%cells(Zne))
 
          do i=1,Znn
             read(10,*) (r(j),j=1,nsd)
@@ -218,9 +202,9 @@ module mesh
          k=0
          do i=1,Zne
             read(20,fmstr) tname
-            read(tname(elty_len-1:elty_len),'(I2)') n
+            read(tname(celltype_len-1:celltype_len),'(I2)') n
             read(20,*) (ienblock(j),j=1,n)
-            call newzone%elem(i)%set_element(tname,ienblock(1:n))
+            call newzone%cells(i)%set_cell(tname,ienblock(1:n))
             k=k+n
          end do
          close(10)
@@ -234,9 +218,9 @@ module mesh
 
          do i=1,Zbnf
             read(30,fmstr) tname
-            read(tname(elty_len-1:elty_len),'(I2)') n
+            read(tname(celltype_len-1:celltype_len),'(I2)') n
             read(30,*) (ienblock(j),j=1,n),btype,(val(j),j=1,ndf)
-            call newzone%bndry(i)%set_element(tname,ienblock(1:n))
+            call newzone%bndry(i)%set_cell(tname,ienblock(1:n))
             call newzone%bndry(i)%set_bval(val)
             call newzone%bndry(i)%set_dirich(btype)
          end do
@@ -252,8 +236,8 @@ module mesh
          open(10,file=trim(outfile))
          write(10,*) "Elements:"
          do i=1,pzone%ne
-            write(10,*) pzone%elem(i)%get_elty(), &
-               (pzone%elem(i)%get_ien(j),j=1,pzone%elem(i)%nen())
+            write(10,*) pzone%cells(i)%get_celltype(), &
+               (pzone%cells(i)%get_ien(j),j=1,pzone%cells(i)%nen())
          end do
          write(10,*) "Nodes:"
          do i=1,pzone%nn
@@ -261,7 +245,7 @@ module mesh
          end do
          write(10,*) "Boundary faces:"
          do i=1,pzone%bnf
-            write(10,*) pzone%bndry(i)%get_elty(), &
+            write(10,*) pzone%bndry(i)%get_celltype(), &
                (pzone%bndry(i)%get_ien(j),j=1,pzone%bndry(i)%nen()), &
                (pzone%bndry(i)%get_bval(j),j=1,ndf),pzone%bndry(i)%is_dirich()
          end do
