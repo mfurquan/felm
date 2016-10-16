@@ -2,10 +2,10 @@ module global
    use iso_fortran_env
    implicit none
 
-   integer,parameter :: wp = REAL64, &
-                        nsd = 3, &
-                        fnam_max = 20, celltype_len = 4, nen_max = 20, &
-                        var_len = 4, shap_len = 8
+   integer,parameter :: rp = REAL64, &
+                        si = selected_int_kind(2), &
+                        li = selected_int_kind(8), &
+                        var_len = 4
    logical,parameter :: debugOn=.FALSE.
 
 end module global
