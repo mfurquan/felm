@@ -1,3 +1,5 @@
+#include "basic_types.h"
+
 module polynomial_type
 !==========================================================================
 ! Polynomial type and operations
@@ -9,8 +11,8 @@ module polynomial_type
    implicit none
 
    type :: polynomial
-      real(kind=wp),allocatable,private :: coeff(:)
-      real(kind=wp),private :: const
+      real,allocatable,private :: coeff(:)
+      real,private :: const
       integer,allocatable,private :: monomial(:,:)
       integer,private :: nvar, nterms
       character(len=var_len),allocatable,private :: var(:)
@@ -18,8 +20,12 @@ module polynomial_type
          procedure,private :: set_poly
          procedure,private :: set_const
          procedure,private :: assign_poly
+         procedure,private :: multiply_poly
          generic :: set_polynomial => set_poly,  set_const
          generic :: assignment(=) => assign_poly
+         generic :: operator(*) => multiply_poly
+         procedure :: get_coeff, get_monomial, get_const
+         procedure :: get_nvar, get_nterms, get_var
          procedure :: clean
          procedure :: eval
          procedure :: deriv
@@ -27,11 +33,15 @@ module polynomial_type
          procedure :: prnt
    end type polynomial
 
+   interface operator (*)
+      module procedure multiply_poly
+   end interface operator (*)
+
    contains
 
       subroutine set_poly(this,tcoeff,tmono,tvar,val_const)
          class(polynomial),intent(inout) :: this
-         real(kind=wp),intent(in) :: tcoeff(:), val_const
+         real,intent(in) :: tcoeff(:), val_const
          character(len=*),intent(in):: tvar(:)
          integer,intent(in) :: tmono(:,:)
 
@@ -66,16 +76,58 @@ module polynomial_type
 
       subroutine set_const(this,val_const)
          class(polynomial),intent(inout) :: this
-         real(kind=wp),intent(in) :: val_const
+         real,intent(in) :: val_const
 
          this%nvar = 0
          this%nterms = 0
          this%const = val_const
 
-         if(allocated(this%coeff)) deallocate(this%coeff)
+         if(allocated(this%coeff))    deallocate(this%coeff)
          if(allocated(this%monomial)) deallocate(this%monomial)
-         if(allocated(this%var)) deallocate(this%var)
+         if(allocated(this%var))      deallocate(this%var)
       end subroutine set_const
+
+      pure function get_coeff(this)
+         class(polynomial),intent(in) :: this
+         real :: get_coeff(this%nterms)
+
+         get_coeff = this%coeff
+      end pure function get_coeff
+
+      pure function get_monomial(this)
+         class(polynomial),intent(in) :: this
+         integer :: get_monomial(this%nvar,this%nterms)
+
+         get_monomial = this%monomial
+      end function get_monomial
+
+      pure function get_var(this)
+         class(polynomial),intent(in) :: this
+         character(len=var_len) :: get_var(this%nvar)
+
+         get_var = this%var
+      end function get_var
+
+      pure function get_nvar(this)
+         class(polynomial),intent(in) :: this
+         integer :: get_nvar
+
+         get_nvar = this%nvar
+      end function get_nvar
+
+      pure function get_nterms(this)
+         class(polynomial),intent(in) :: this
+         integer :: get_nterms
+
+         get_nterms = this%nterms
+      end function get_nterms
+
+      pure function get_const(this)
+         class(polynomial),intent(in) :: this
+         real :: get_const
+
+         get_const = this%const
+      end function get_const
 
       subroutine assign_poly(lvalue, rvalue)
          class(polynomial),intent(in) :: rvalue
@@ -91,8 +143,8 @@ module polynomial_type
 
       pure function eval(this,x)
          class(polynomial),intent(in) :: this
-         real(kind=wp),intent(in) :: x(:)
-         real(kind=wp) :: eval, tmp
+         real,intent(in) :: x(:)
+         real :: eval, tmp
          integer :: i, j
 
          ! simple concurrent evaluation
@@ -133,8 +185,8 @@ module polynomial_type
       ! stores polynomial in its simplest form
       subroutine clean(this)
          class(polynomial),intent(inout) :: this
-         real(kind=wp),allocatable :: ccoeff(:)
-         real(kind=wp) :: cconst
+         real,allocatable :: ccoeff(:)
+         real :: cconst
          integer,allocatable :: cmono(:,:), drow(:), dcol(:)
          character(len=var_len),allocatable :: cvar(:)
          logical :: extra_var(this%nvar), extra_trm(this%nterms)
@@ -216,4 +268,59 @@ module polynomial_type
          end if
          write(*,*)
       end subroutine prnt
+
+      pure function multiply_poly(poly1,poly2) result (poly3)
+         class(polynomial),intent(in) :: poly1, poly2
+         class(polynomial) :: poly3
+         real,allocatable :: coeff2, coeff3(:)
+         real :: const2, const3
+         integer,allocatable :: mono2(:,:), mono3(:,:)
+         character(len=var_len),allocatable :: var2(:), var3(:)
+         integer :: nterms2, nvar2, nterms3, nvar3
+         integer,allocatable :: comvar(poly1%nvar)
+         integer :: i, j, k
+
+         coeff2  = poly2%get_coeff()
+         const2  = poly2%get_const()
+         mono2   = poly2%get_mono()
+         var2    = poly2%get_var()
+         nterms2 = poly2%get_nterms()
+         nvar2   = poly2%get_nvar()
+
+         comvar  = common_var(poly1%var, var2)
+         nterms3 = poly1%nterms * nterms2
+         nvar3   = poly1%nvar + nvar2 - count(comvar /= 0)
+         const3  = poly1%const * const2
+
+         allocate(coeff3(nterms3))
+         allocate(mono3(nvar3,nterms3))
+         allocate(var3(nvar3))
+
+         n = 0
+         do i = 1, poly1%nvar
+            if(comvar(i) == 0) then
+               n = n + 1
+               var3(n) = poly1%var(i)
+            end if
+         end do
+         var3(n + 1:nvar2) = var2
+         
+         mono3 = 0
+         do concurrent (i = 1:poly1%nterms, j = 1:nterms2)
+            k = (i - 1)*nterms2 + j
+            m = 0
+            do l = 1, poly1%nvar
+               if(comvar(l) == 0)
+                  m = m + 1
+                  mono3(m,k) = poly1%mono(l)
+               else
+                  mono3(n + comvar(l),k) = poly1%mono(l)
+               end if
+            end do
+            mono3(n + 1:nvar2,k) = mono3(n + 1:nvar2,k) + mono2
+            coeff3(k) = poly1%coeff(i)*coeff2(j)
+         end do
+
+         call poly3%set_polynomial(coeff3,mono3,var3,const3)
+      end function multiply_poly
 end module polynomial_type
