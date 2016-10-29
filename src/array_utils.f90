@@ -1,3 +1,5 @@
+#include "basic_types.h"
+
 module array_utils
 !========================================================================
 ! Some utilities for handling dynamic arrays
@@ -22,9 +24,9 @@ module array_utils
    contains
 
       subroutine del_elemf(array,elem)
-         real(kind=wp),allocatable :: array(:), tmp(:)
-         integer :: elem(:)
-         integer :: i, j, m, n
+         double,allocatable :: array(:), tmp(:)
+         longint :: elem(:)
+         longint :: i, j, m, n
 
          m = size(elem)
          if(m > 0) then
@@ -42,9 +44,9 @@ module array_utils
       end subroutine del_elemf
 
       subroutine del_elemi(array,elem)
-         integer,allocatable :: array(:), tmp(:)
-         integer :: elem(:)
-         integer :: i, j, m, n
+         longint,allocatable :: array(:), tmp(:)
+         longint :: elem(:)
+         longint :: i, j, m, n
 
          m = size(elem)
          if(m > 0) then
@@ -64,8 +66,8 @@ module array_utils
       subroutine del_elema(array,elem)
          character(len=*),allocatable :: array(:)
          character(len=LEN(array(1))),allocatable :: tmp(:)
-         integer :: elem(:)
-         integer :: i, j, m, n
+         longint :: elem(:)
+         longint :: i, j, m, n
 
          m = size(elem)
          if(m > 0) then
@@ -83,9 +85,9 @@ module array_utils
      end subroutine del_elema
 
      subroutine del_rowf(array,elem)
-         real(kind=wp),allocatable :: array(:,:), tmp(:,:)
-         integer :: elem(:)
-         integer :: i, j, m, n
+         double,allocatable :: array(:,:), tmp(:,:)
+         longint :: elem(:)
+         longint :: i, j, m, n
 
          m = size(elem)
          if(m > 0) then
@@ -103,9 +105,9 @@ module array_utils
       end subroutine del_rowf
 
       subroutine del_colf(array,elem)
-         real(kind=wp),allocatable :: array(:,:), tmp(:,:)
-         integer :: elem(:)
-         integer :: i, j, m, n
+         double,allocatable :: array(:,:), tmp(:,:)
+         longint :: elem(:)
+         longint :: i, j, m, n
 
          m = size(elem)
          if (m > 0) then
@@ -123,9 +125,9 @@ module array_utils
       end subroutine del_colf
 
       subroutine del_rowi(array,elem)
-         integer,allocatable :: array(:,:), tmp(:,:)
-         integer :: elem(:)
-         integer :: i, j, m, n
+         longint,allocatable :: array(:,:), tmp(:,:)
+         longint :: elem(:)
+         longint :: i, j, m, n
 
          m = size(elem)
          if(m > 0) then
@@ -143,9 +145,9 @@ module array_utils
       end subroutine del_rowi
 
       subroutine del_coli(array,elem)
-         integer,allocatable :: array(:,:), tmp(:,:)
-         integer :: elem(:)
-         integer :: i, j, m, n
+         longint,allocatable :: array(:,:), tmp(:,:)
+         longint :: elem(:)
+         longint :: i, j, m, n
 
          m = size(elem)
          if(m > 0) then

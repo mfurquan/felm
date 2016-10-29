@@ -1,11 +1,14 @@
+#include "basic_types.h"
+
 program test_polynomial
    use global
    use polynomial_type
+   use linpol
    implicit none
 
-   type(polynomial) :: p, dp
-   real(kind=wp) :: a(3), c
-   integer :: e(1,3), e1(2,3)
+   type(polynomial) :: p, dp, q
+   double :: a(3), c
+   longint :: e(1,3), e1(2,3)
    character(len=var_len) :: x(1), x1(2)
 
    a = [5.0, 1.0, 7.2]
@@ -32,4 +35,9 @@ program test_polynomial
    call dp%prnt
 
    write(*,*) 'dp(3,2)=',dp%eval([3.0_wp,2.0_wp])
+
+   q = linpol('x',-2.0)
+   call q%prnt
+   q = q*p
+   call q%prnt
 end program test_polynomial

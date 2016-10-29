@@ -10,9 +10,9 @@ module grid
    implicit none
 
    type :: grid
-      integer,                   protected :: ne, nn, ndim
-      integer,allocatable,         private :: ien(:), nen(:)
-      real,   allocatable,target,protected :: val(:)
+      longint,                   protected :: ne, nn, ndim
+      longint,allocatable,         private :: ien(:), nen(:)
+      double,   allocatable,target,protected :: val(:)
       contains
          procedure :: set_grid, set_val
          procedure :: get_nen,  get_val
@@ -23,9 +23,9 @@ module grid
 !***************************** grid-bound procedures ***********************
    subroutine set_grid(this,numdof,numnp,cells,nodes)
       class(grid),intent(inout) :: this
-      real,       intent(in)    :: nodes(:,:)
-      integer,    intent(in)    :: cells(:,:), numnp, numdof
-      integer                   :: ncn, nen_max, m, i, j
+      double,       intent(in)    :: nodes(:,:)
+      longint,    intent(in)    :: cells(:,:), numnp, numdof
+      longint                   :: ncn, nen_max, m, i, j
 
       if(present(nodes)) then
          if(numdof /= size(nodes,1)) &
@@ -63,16 +63,16 @@ module grid
    elemental function get_nen(this,iele)
       class(this),intent(in) :: this
       shortint               :: get_nen
-      integer,intent(in)     :: iele
+      longint,intent(in)     :: iele
 
       get_nen = this%nen(iele + 1) - this%nen(iele)
    end function get_nen
 
    pure function get_val(this,iele,inod)
       class(this),intent(in) :: this
-      integer,    intent(in) :: iele, inod
-      real,pointer           :: get_val
-      integer                :: n
+      longint,    intent(in) :: iele, inod
+      double,pointer           :: get_val
+      longint                :: n
 
       n = this%nen(iele + inod - 1)
       get_val => this%val(n : n + this%ndim -1)
@@ -80,9 +80,9 @@ module grid
 
    function set_val(this,iele,inod,nodvalue)
       class(this),intent(in) :: this
-      integer,    intent(in) :: iele, inod
-      real                   :: nodvalue(:)
-      integer                :: n
+      longint,    intent(in) :: iele, inod
+      double                   :: nodvalue(:)
+      longint                :: n
 
       n = this%nen(iele + inod - 1)
       this%val(n : n + this%ndim -1) = nodvalue

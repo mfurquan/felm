@@ -11,10 +11,10 @@ module polynomial_type
    implicit none
 
    type :: polynomial
-      real,allocatable,private :: coeff(:)
-      real,private :: const
-      integer,allocatable,private :: monomial(:,:)
-      integer,private :: nvar, nterms
+      double,allocatable,private :: coeff(:)
+      double,private :: const
+      longint,allocatable,private :: monomial(:,:)
+      longint,private :: nvar, nterms
       character(len=var_len),allocatable,private :: var(:)
       contains
          procedure,private :: set_poly
@@ -33,17 +33,13 @@ module polynomial_type
          procedure :: prnt
    end type polynomial
 
-   interface operator (*)
-      module procedure multiply_poly
-   end interface operator (*)
-
    contains
 
-      subroutine set_poly(this,tcoeff,tmono,tvar,val_const)
+      pure subroutine set_poly(this,tcoeff,tmono,tvar,val_const)
          class(polynomial),intent(inout) :: this
-         real,intent(in) :: tcoeff(:), val_const
+         double,intent(in) :: tcoeff(:), val_const
          character(len=*),intent(in):: tvar(:)
-         integer,intent(in) :: tmono(:,:)
+         longint,intent(in) :: tmono(:,:)
 
          if(size(tmono)/=size(tcoeff)*size(tvar)) &
             error stop "in set_polynomial: incompatible input data"
@@ -76,7 +72,7 @@ module polynomial_type
 
       subroutine set_const(this,val_const)
          class(polynomial),intent(inout) :: this
-         real,intent(in) :: val_const
+         double,intent(in) :: val_const
 
          this%nvar = 0
          this%nterms = 0
@@ -89,42 +85,43 @@ module polynomial_type
 
       pure function get_coeff(this)
          class(polynomial),intent(in) :: this
-         real :: get_coeff(this%nterms)
+         double :: get_coeff(this%nterms)
 
          get_coeff = this%coeff
-      end pure function get_coeff
+      end function get_coeff
 
       pure function get_monomial(this)
          class(polynomial),intent(in) :: this
-         integer :: get_monomial(this%nvar,this%nterms)
+         longint :: get_monomial(this%nvar,this%nterms)
 
          get_monomial = this%monomial
       end function get_monomial
 
-      pure function get_var(this)
+      elemental function get_var(this,ivar)
          class(polynomial),intent(in) :: this
-         character(len=var_len) :: get_var(this%nvar)
+         shortint,intent(in) :: ivar
+         character(len=var_len) :: get_var
 
-         get_var = this%var
+         get_var = this%var(ivar)
       end function get_var
 
       pure function get_nvar(this)
          class(polynomial),intent(in) :: this
-         integer :: get_nvar
+         longint :: get_nvar
 
          get_nvar = this%nvar
       end function get_nvar
 
       pure function get_nterms(this)
          class(polynomial),intent(in) :: this
-         integer :: get_nterms
+         longint :: get_nterms
 
          get_nterms = this%nterms
       end function get_nterms
 
       pure function get_const(this)
          class(polynomial),intent(in) :: this
-         real :: get_const
+         double :: get_const
 
          get_const = this%const
       end function get_const
@@ -143,9 +140,9 @@ module polynomial_type
 
       pure function eval(this,x)
          class(polynomial),intent(in) :: this
-         real,intent(in) :: x(:)
-         real :: eval, tmp
-         integer :: i, j
+         double,intent(in) :: x(:)
+         double :: eval, tmp
+         longint :: i, j
 
          ! simple concurrent evaluation
          ! should perhaps try Horner's method
@@ -163,18 +160,18 @@ module polynomial_type
          class(polynomial),intent(in) :: this
          type(polynomial) :: deriv
          character(len=*),intent(in) :: tvar
-         integer :: ivar
+         longint :: ivar
 
          if(this%nvar == 0) then
-            call deriv%set_polynomial(0.0_wp)
+            call deriv%set_polynomial(0.0_rp)
          else if(ALL(tvar /= this%var(:))) then
-            call deriv%set_polynomial(0.0_wp)
+            call deriv%set_polynomial(0.0_rp)
          else
             do ivar = 1,this%nvar
                if(tvar == this%var(ivar)) exit
             end do
             deriv = this
-            deriv%const = 0.0_wp
+            deriv%const = 0.0_rp
             deriv%coeff = this%coeff * this%monomial(ivar,:)
             deriv%monomial(ivar,:) = this%monomial(ivar,:) - 1
          end if
@@ -185,12 +182,12 @@ module polynomial_type
       ! stores polynomial in its simplest form
       subroutine clean(this)
          class(polynomial),intent(inout) :: this
-         real,allocatable :: ccoeff(:)
-         real :: cconst
-         integer,allocatable :: cmono(:,:), drow(:), dcol(:)
+         double,allocatable :: ccoeff(:)
+         double :: cconst
+         longint,allocatable :: cmono(:,:), drow(:), dcol(:)
          character(len=var_len),allocatable :: cvar(:)
          logical :: extra_var(this%nvar), extra_trm(this%nterms)
-         integer :: i, j, ivar, imono
+         longint :: i, j, ivar, imono
 
          ccoeff = this%coeff
          cmono = this%monomial
@@ -246,7 +243,7 @@ module polynomial_type
 
       subroutine prnt(this)
          class(polynomial) :: this
-         integer :: itrm, ivar
+         longint :: itrm, ivar
          character(len=4) :: afmt
 
          do itrm = 1, this%nterms
@@ -271,19 +268,19 @@ module polynomial_type
 
       pure function multiply_poly(poly1,poly2) result (poly3)
          class(polynomial),intent(in) :: poly1, poly2
-         class(polynomial) :: poly3
-         real,allocatable :: coeff2, coeff3(:)
-         real :: const2, const3
-         integer,allocatable :: mono2(:,:), mono3(:,:)
+         type(polynomial) :: poly3
+         double,allocatable :: coeff2(:), coeff3(:)
+         double :: const2, const3
+         longint,allocatable :: mono2(:,:), mono3(:,:)
          character(len=var_len),allocatable :: var2(:), var3(:)
-         integer :: nterms2, nvar2, nterms3, nvar3
-         integer,allocatable :: comvar(poly1%nvar)
-         integer :: i, j, k
+         shortint :: nterms2, nvar2, nterms3, nvar3
+         shortint :: comvar(poly1%nvar)
+         shortint :: i, j, k, l, m, n
 
          coeff2  = poly2%get_coeff()
          const2  = poly2%get_const()
-         mono2   = poly2%get_mono()
-         var2    = poly2%get_var()
+         mono2   = poly2%get_monomial()
+         var2    = poly2%get_var([(i, i = 1, poly2%get_nvar())])
          nterms2 = poly2%get_nterms()
          nvar2   = poly2%get_nvar()
 
@@ -310,17 +307,30 @@ module polynomial_type
             k = (i - 1)*nterms2 + j
             m = 0
             do l = 1, poly1%nvar
-               if(comvar(l) == 0)
+               if(comvar(l) == 0) then
                   m = m + 1
-                  mono3(m,k) = poly1%mono(l)
+                  mono3(m,k) = poly1%monomial(l,i)
                else
-                  mono3(n + comvar(l),k) = poly1%mono(l)
+                  mono3(n + comvar(l),k) = poly1%monomial(l,i)
                end if
             end do
-            mono3(n + 1:nvar2,k) = mono3(n + 1:nvar2,k) + mono2
+            mono3(n + 1:nvar2,k) = mono3(n + 1:nvar2,k) + mono2(:,j)
             coeff3(k) = poly1%coeff(i)*coeff2(j)
          end do
 
          call poly3%set_polynomial(coeff3,mono3,var3,const3)
+
+         contains
+            pure function common_var(var_str1,var_str2)
+               character(len=*),intent(in) :: var_str1(:), var_str2(:)
+               shortint :: common_var(len(var_str1))
+               shortint :: i, j, m, n
+
+               m = len(var_str1); n = len(var_str2)
+               common_var = 0
+               do concurrent (i = 1:m, j = 1:n)
+                  if(var_str1(i) == var_str2(j)) common_var(i) = j
+               end do
+            end function common_var
       end function multiply_poly
 end module polynomial_type
