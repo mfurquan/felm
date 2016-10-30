@@ -1,9 +1,9 @@
-#include "basic_types.h"
+#include "../../include/basic_types.h"
 
 program test_polynomial
    use global
    use polynomial_type
-   use linpol
+   use spec_poly
    implicit none
 
    type(polynomial) :: p, dp, q
@@ -17,8 +17,11 @@ program test_polynomial
    x = 'x'
 
    call p%set_polynomial(a,e,x,c)
+   write(*,*) '*** Testing single variable polynomial ***'
+   write(*,'(A7)',advance='no') 'p(x) = '
    call p%prnt
    dp=p%deriv('x')
+   write(*,'(A8)',advance='no') 'dp/dx = '
    call dp%prnt
 
    e1(1,:) = e(1,:)
@@ -26,18 +29,25 @@ program test_polynomial
    x1      = ['x', 'y']
 
    call p%set_polynomial(a,e1,x1,c)
+   write(*,*) '*** Testing two variable polynomial *** '
+   write(*,'(A9)',advance='no') 'p(x,y) = '
    call p%prnt
+   write(*,'(A8)',advance='no') 'dp/dx = '
    dp=p%deriv('x')
    call dp%prnt
+   write(*,'(A8)',advance='no') 'dp/dy = '
    dp=p%deriv('y')
    call dp%prnt
+   write(*,'(A11)',advance='no') 'd2p/dydx = '
    dp=dp%deriv('x')
    call dp%prnt
 
-   write(*,*) 'dp(3,2)=',dp%eval([3.0_wp,2.0_wp])
+   write(*,*) 'd2p/dydx|(3,2)=',dp%eval([3.0_rp,2.0_rp])
 
-   q = linpol('x',-2.0)
+   write(*,'(A7)',advance='no') 'q(x) = '
+   q = linpol('x',-2.0_rp)
    call q%prnt
+   write(*,'(A13)',advance='no') 'q(x)p(x,y) = '
    q = q*p
    call q%prnt
 end program test_polynomial

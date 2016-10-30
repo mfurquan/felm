@@ -1,4 +1,4 @@
-#include "basic_types.h"
+#include "../include/basic_types.h"
 
 module polynomial_type
 !==========================================================================
@@ -70,7 +70,7 @@ module polynomial_type
          this%var = tvar
       end subroutine set_poly
 
-      subroutine set_const(this,val_const)
+      pure subroutine set_const(this,val_const)
          class(polynomial),intent(inout) :: this
          double,intent(in) :: val_const
 
@@ -98,6 +98,8 @@ module polynomial_type
       end function get_monomial
 
       elemental function get_var(this,ivar)
+         ! procedure made elemental to avoid gfortran internal error
+         ! should return whole var array, otherwise
          class(polynomial),intent(in) :: this
          shortint,intent(in) :: ivar
          character(len=var_len) :: get_var
@@ -323,10 +325,10 @@ module polynomial_type
          contains
             pure function common_var(var_str1,var_str2)
                character(len=*),intent(in) :: var_str1(:), var_str2(:)
-               shortint :: common_var(len(var_str1))
+               shortint :: common_var(poly1%nvar)
                shortint :: i, j, m, n
 
-               m = len(var_str1); n = len(var_str2)
+               m = poly1%nvar; n = nvar2
                common_var = 0
                do concurrent (i = 1:m, j = 1:n)
                   if(var_str1(i) == var_str2(j)) common_var(i) = j
