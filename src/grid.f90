@@ -12,7 +12,7 @@ module grid
    type :: grid
       longint,                   protected :: ne, nn, ndim
       longint,allocatable,         private :: ien(:), nen(:)
-      double,   allocatable,target,protected :: val(:)
+      double, allocatable,target,protected :: val(:)
       contains
          procedure :: set_grid, set_val
          procedure :: get_nen,  get_val

@@ -291,6 +291,8 @@ module polynomial_type
          nvar3   = poly1%nvar + nvar2 - count(comvar /= 0)
          const3  = poly1%const * const2
 
+         if(poly1%const /= 0_rp) &
+            nterms3 = nterms3 + poly1%nterms + nterms2
          allocate(coeff3(nterms3))
          allocate(mono3(nvar3,nterms3))
          allocate(var3(nvar3))
@@ -303,7 +305,8 @@ module polynomial_type
             end if
          end do
          var3(n + 1:nvar2) = var2
-         
+        
+         ! multiplying terms of second polynomial by those of first
          mono3 = 0
          do concurrent (i = 1:poly1%nterms, j = 1:nterms2)
             k = (i - 1)*nterms2 + j
@@ -319,6 +322,26 @@ module polynomial_type
             mono3(n + 1:nvar2,k) = mono3(n + 1:nvar2,k) + mono2(:,j)
             coeff3(k) = poly1%coeff(i)*coeff2(j)
          end do
+         k = poly1%nterms*nterms2
+         do concurrent (i = 1:poly1%nterms)
+            k = poly1%nterms*nterms2 + i
+            m = 0
+            do l = 1,poly1%nvar
+               if(comvar(l) == 0) then
+                  m = m + 1
+                  mono3(m,k) = poly1%monomial(l,i)
+               else
+                  mono3(n + comvar(l),k) = poly1%monomial(l,i)
+               end if
+            end do
+            coeff3(k) = poly1%coeff(i)*const2
+         end do
+
+         ! multiplying the second polynomial by the constant of first
+         if(nterms3 > k) then
+            coeff3(k + 1:) = poly1%const*coeff2
+            mono3(n + 1:nvar2,k + 1:) = mono2
+         end if
 
          call poly3%set_polynomial(coeff3,mono3,var3,const3)
 

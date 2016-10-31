@@ -50,4 +50,7 @@ program test_polynomial
    write(*,'(A13)',advance='no') 'q(x)p(x,y) = '
    q = q*p
    call q%prnt
+   write(*,*) q%get_nvar(), q%get_nterms()
+   write(*,*) q%get_coeff()
+   write(*,*) q%get_monomial()
 end program test_polynomial
