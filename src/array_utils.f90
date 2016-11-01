@@ -23,9 +23,10 @@ module array_utils
 
    contains
 
-      subroutine del_elemf(array,elem)
-         double,allocatable :: array(:), tmp(:)
-         longint :: elem(:)
+      pure subroutine del_elemf(array,elem)
+         double,allocatable,intent(inout) :: array(:)
+         double,allocatable :: tmp(:)
+         longint,intent(in) :: elem(:)
          longint :: i, j, m, n
 
          m = size(elem)
@@ -43,9 +44,10 @@ module array_utils
          end if
       end subroutine del_elemf
 
-      subroutine del_elemi(array,elem)
-         longint,allocatable :: array(:), tmp(:)
-         longint :: elem(:)
+      pure subroutine del_elemi(array,elem)
+         longint,allocatable,intent(inout) :: array(:)
+         longint,allocatable :: tmp(:)
+         longint,intent(in) :: elem(:)
          longint :: i, j, m, n
 
          m = size(elem)
@@ -63,10 +65,10 @@ module array_utils
          end if
       end subroutine del_elemi
 
-      subroutine del_elema(array,elem)
-         character(len=*),allocatable :: array(:)
+      pure subroutine del_elema(array,elem)
+         character(len=*),allocatable,intent(inout) :: array(:)
          character(len=LEN(array(1))),allocatable :: tmp(:)
-         longint :: elem(:)
+         longint,intent(in) :: elem(:)
          longint :: i, j, m, n
 
          m = size(elem)
@@ -84,9 +86,10 @@ module array_utils
          end if
      end subroutine del_elema
 
-     subroutine del_rowf(array,elem)
-         double,allocatable :: array(:,:), tmp(:,:)
-         longint :: elem(:)
+     pure subroutine del_rowf(array,elem)
+         double,allocatable,intent(inout) :: array(:,:)
+         double,allocatable :: tmp(:,:)
+         longint,intent(in) :: elem(:)
          longint :: i, j, m, n
 
          m = size(elem)
@@ -104,9 +107,10 @@ module array_utils
          end if
       end subroutine del_rowf
 
-      subroutine del_colf(array,elem)
-         double,allocatable :: array(:,:), tmp(:,:)
-         longint :: elem(:)
+      pure subroutine del_colf(array,elem)
+         double,allocatable,intent(inout) :: array(:,:)
+         double,allocatable :: tmp(:,:)
+         longint,intent(in) :: elem(:)
          longint :: i, j, m, n
 
          m = size(elem)
@@ -124,9 +128,10 @@ module array_utils
          end if
       end subroutine del_colf
 
-      subroutine del_rowi(array,elem)
-         longint,allocatable :: array(:,:), tmp(:,:)
-         longint :: elem(:)
+      pure subroutine del_rowi(array,elem)
+         longint,allocatable,intent(inout) :: array(:,:)
+         longint,allocatable :: tmp(:,:)
+         longint,intent(in) :: elem(:)
          longint :: i, j, m, n
 
          m = size(elem)
@@ -144,9 +149,10 @@ module array_utils
          end if
       end subroutine del_rowi
 
-      subroutine del_coli(array,elem)
-         longint,allocatable :: array(:,:), tmp(:,:)
-         longint :: elem(:)
+      pure subroutine del_coli(array,elem)
+         longint,allocatable,intent(inout) :: array(:,:)
+         longint,allocatable :: tmp(:,:)
+         longint,intent(in) :: elem(:)
          longint :: i, j, m, n
 
          m = size(elem)

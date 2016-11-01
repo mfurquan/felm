@@ -42,7 +42,7 @@ program test_polynomial
    dp=dp%deriv('x')
    call dp%prnt
 
-   write(*,*) 'd2p/dydx|(3,2)=',dp%eval([3.0_rp,2.0_rp])
+   write(*,*) 'd2p/dydx|(3,2) =',dp%eval([3.0_rp,2.0_rp])
 
    write(*,'(A7)',advance='no') 'q(x) = '
    q = linpol('x',-2.0_rp)
@@ -50,7 +50,4 @@ program test_polynomial
    write(*,'(A13)',advance='no') 'q(x)p(x,y) = '
    q = q*p
    call q%prnt
-   write(*,*) q%get_nvar(), q%get_nterms()
-   write(*,*) q%get_coeff()
-   write(*,*) q%get_monomial()
 end program test_polynomial

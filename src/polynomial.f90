@@ -26,9 +26,8 @@ module polynomial_type
          generic :: operator(*) => multiply_poly
          procedure :: get_coeff, get_monomial, get_const
          procedure :: get_nvar, get_nterms, get_var
-         procedure :: clean
-         procedure :: eval
-         procedure :: deriv
+         procedure :: clean, combine
+         procedure :: eval, deriv
 
          procedure :: prnt
    end type polynomial
@@ -243,6 +242,46 @@ module polynomial_type
          call this%set_polynomial(ccoeff,cmono,cvar,cconst)
       end subroutine clean
 
+      ! simplifies by combinations like:
+      ! a.x^m y^n + b.x^m y^n -> (a + b).x^m y^n
+      pure subroutine combine(this)
+         class(polynomial),intent(inout) :: this
+         double,allocatable :: ccoeff(:)
+         longint,allocatable :: cmono(:,:)
+         double :: cconst
+         character(len=var_len),allocatable :: cvar(:)
+         shortint :: i, j
+         longint,allocatable :: dcol(:)
+         logical :: extra_trm(this%nterms)
+
+         extra_trm = .FALSE.
+         do concurrent (i = 1:this%nterms, j =1:this%nterms, i > j)
+            if(ALL(this%monomial(:,i) == this%monomial(:,j))) then
+               extra_trm(j) = .TRUE.
+               this%coeff(i) = this%coeff(i) + this%coeff(j)
+            end if
+         end do
+         allocate(dcol(count(extra_trm)))
+
+         j = 0
+         do i = 1,size(extra_trm)
+            if(extra_trm(i)) then
+               j = j + 1
+               dcol(j) = i
+            end if
+         end do
+
+         ccoeff = this%coeff
+         cmono  = this%monomial
+         cvar   = this%var
+         cconst = this%const
+
+         call del_elem(ccoeff,dcol)
+         call del_cols(cmono, dcol)
+
+         call this%set_polynomial(ccoeff,cmono,cvar,cconst)
+      end subroutine combine
+
       subroutine prnt(this)
          class(polynomial) :: this
          longint :: itrm, ivar
@@ -344,6 +383,7 @@ module polynomial_type
          end if
 
          call poly3%set_polynomial(coeff3,mono3,var3,const3)
+         call poly3%combine()
 
          contains
             pure function common_var(var_str1,var_str2)
