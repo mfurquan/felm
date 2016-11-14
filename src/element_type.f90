@@ -1,32 +1,27 @@
+#include "../include/basic_types.h"
+
 module element_type
    use global
    use polynomial
    use integration
    implicit none
 
-   type :: element
+   type,abstract :: element
       type(polynomial),allocatable,private :: shapefn(:), dshapefn(:,:)
       type(integration),private :: elemcub
       contains
-         procedure :: set_element
+         procedure(set_elem),deferred :: set_element
          procedure :: eval, deriv
    end type element
 
+   abstract interface
+      pure subroutine set_elem(this,elshape,order)
+         class(element),intent(inout) :: this
+         character(len=ele_len),intent(in) :: elshape
+         shortint,intent(in) :: order
+   end interface
+
    contains
 
-      subroutine set_element(this,code)
-         class(this),intent(inout) :: this
-         character(len=*),intent(in) :: code
-         character(len=2) :: family
-         character :: dummy
-         integer :: order, dimen
-
-         read(code,'(2A2IAI)') family,order,dummy,dimen
-         select case(family)
-            case('LR')
-               if(dimen == '1') then
-                  allocate(shapefn(order + 1))
-               end if
-         end select
-      end subroutine set_element
+      elemental function eval(this,)
 end module element_type
