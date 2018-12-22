@@ -1,8 +1,5 @@
-#include "../include/basic_types.h"
-
 module element_type
    use global
-   use polynomial
    use integration
    implicit none
 
