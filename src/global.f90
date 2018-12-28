@@ -10,6 +10,6 @@ module global
                         var_len =  4, &
                         ele_len =  4
 
-   logical,parameter :: debugOn=.FALSE.
+   logical,parameter :: debugOn=.TRUE.
 
 end module global
