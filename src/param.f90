@@ -1,4 +1,4 @@
-module global
+module param
    use iso_fortran_env, only : REAL64
    implicit none
 
@@ -12,4 +12,4 @@ module global
 
    logical,parameter :: debugOn=.TRUE.
 
-end module global
+end module param
