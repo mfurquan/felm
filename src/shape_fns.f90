@@ -16,7 +16,9 @@ contains
       xia  = [(-1._rp+2._rp*i/(nnod-1), i = 0,nnod-1)]
       ia   = [(i, i = 1,nnod)]
 
-      L%wq = qr%wq
+      L%wq = qr%wts
+      L%sh = lagr_poly(qr%pts,nnod)
+      L%sh = lagr_poly_deriv(qr%pts,nnod)
 
       allocate(L% sh(nq,nnod))
       allocate(L%dsh(nq,1,nnod))
@@ -25,7 +27,7 @@ contains
          L%dsh(:,1,i) = lagr_xi(i)
       end do
    contains
-      elemental function lagr(ind)
+      pure function lagr(xq,nnode)
          integer,intent(in)        :: ind
          type(qscalar) :: lagr
          logical                   :: am(nnod), bm(nnod,nnod-1)
