@@ -9,6 +9,7 @@ module integration
    implicit none
 
    type :: qrule
+      integer :: nq
       real(kind=rp),allocatable :: pts(:), wts(:)
       contains
          procedure :: init => init_qrule
