@@ -18,7 +18,7 @@ contains
 
       L%wq = qr%wts
       L%sh = lagr_poly(qr%pts,nnod)
-      L%sh = lagr_poly_deriv(qr%pts,nnod)
+      L%dsh = lagr_poly_deriv(qr%pts,nnod)
 
       allocate(L% sh(nq,nnod))
       allocate(L%dsh(nq,1,nnod))
