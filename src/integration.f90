@@ -11,7 +11,7 @@ module integration
    type :: qrule
       integer :: nq
       real(kind=rp),allocatable :: pts(:), wts(:)
-      contains
+   contains
          procedure :: init => init_qrule
    end type qrule
 

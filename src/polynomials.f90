@@ -7,6 +7,7 @@ module polynomials
       real(kind=rp) :: roots(deg), factor
    contains
       procedure :: eval
+      procedure :: deriv
    end type polynom
 
 contains
@@ -17,4 +18,7 @@ contains
       
       eval = PRODUCT(x-this%roots)*factor
    end function eval
+
+   elemental function deriv(this,x)
+      type(polynom),intent(in) :: this
 end module polynomials

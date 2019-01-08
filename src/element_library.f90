@@ -1,10 +1,8 @@
-module shape_fns
+module element_library
    use param
    use elements
    implicit none
 contains
-   ! tensor product of shape_fns
-
    ! 1D Lagrange polynomial
    pure function lagrng_poly(nnod,qr) result (L)
       integer,    intent(in) :: nnod
@@ -17,36 +15,11 @@ contains
       ia   = [(i, i = 1,nnod)]
 
       L%wq = qr%wts
-      L%sh = lagr_poly(qr%pts,nnod)
-      L%dsh = lagr_poly_deriv(qr%pts,nnod)
-
-      allocate(L% sh(nq,nnod))
-      allocate(L%dsh(nq,1,nnod))
       do concurrent (i = 1:nnod)
-         L% sh(:,i)   = lagr   (i)
-         L%dsh(:,1,i) = lagr_xi(i)
+         xib = PACK(xia,ia/=i)
+         L% sh(:,i) = eval_poly      (qr%pts,xib)
+         L%dsh(:,i) = eval_poly_deriv(qr%pts,xib)
       end do
-   contains
-      pure function lagr(xq,nnode)
-         integer,intent(in)        :: ind
-         type(qscalar) :: lagr
-         logical                   :: am(nnod), bm(nnod,nnod-1)
-         real(kind=rp)             :: xdiff(nnod), divsor
-         integer                   :: i
-
-
-         call lagr%init(SIZE(xq),1,1)
-         am = ia /= ind
-         bm = RESHAPE([(am.AND.CSHIFT(am,i), i = 1,nnod-1)],[nnod,nnod-1])
-
-         do concurrent (i = 1:lagr%nqd)
-            xdiff          = xq(i) - xia
-            divsor         = PRODUCT(xia(ind) - xia, am)
-            lagr%v(i,1)    = PRODUCT(xdiff,am)/divsor
-            lagr%dv(i,1,1) = SUM(PRODUCT(SPREAD(xdiff,2,nnod-1),1,bm))   &
-                           / divsor
-         end do
-      end function lagr
    end function lagrng_poly
 
    ! Simplex shape functions
@@ -143,4 +116,24 @@ contains
       end function combine_T_xi
    end subroutine simplex
 
-end module shape_fns
+!====================== UTILITY PROCEDURES ===============================
+   pure function eval_poly(x,roots)
+      real(kind=rp),intent(in) :: x(:), roots(:)
+      real(kind=rp) :: eval_poly(SIZE(x))
+
+      eval_poly = PRODUCT(SPREAD(x    ,1,SIZE(roots))                    &
+                -         SPREAD(roots,2,SIZE(x))    ,1)
+   end function eval_poly
+
+   pure function eval_poly_deriv(x,roots)
+      real(kind=rp),intent(in) :: x(:), roots(:)
+      real(kind=rp) :: eval_poly_deriv(SIZE(x))
+      integer :: i, n
+
+      n = SIZE(roots)
+      do concurrent (i = 1,n)
+         eval_poly_deriv = eval_poly_deriv                               &
+                         + eval_poly(x,[roots(1:i-1),roots(i+1:n)])
+      end do
+   end function eval_poly_deriv
+end module element_library
